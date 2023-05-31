@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useBeforeUnload } from "react-router-dom";
 import type { unstable_Blocker as Blocker } from "react-router-dom";
 import {
   createBrowserRouter,
@@ -10,10 +11,10 @@ import {
   Route,
   RouterProvider,
   unstable_useBlocker as useBlocker,
-  useLocation,
+  useLocation
 } from "react-router-dom";
 
-let router = createBrowserRouter(
+const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<Layout />}>
       <Route index element={<h2>Index</h2>} />
@@ -44,10 +45,10 @@ export default function App() {
 }
 
 function Layout() {
-  let [historyIndex, setHistoryIndex] = React.useState(
+  const [historyIndex, setHistoryIndex] = React.useState(
     window.history.state?.idx
   );
-  let location = useLocation();
+  const location = useLocation();
 
   // Expose the underlying history index in the UI for debugging
   React.useEffect(() => {
@@ -78,26 +79,30 @@ function Layout() {
   );
 }
 
-function ImportantForm() {
-  let [value, setValue] = React.useState("");
-  let isBlocked = value !== "";
-  let blocker = useBlocker(isBlocked);
 
-  // Reset the blocker if the user cleans the form
-  React.useEffect(() => {
-	console.log(value);
-	console.log(isBlocked);
-	console.log(blocker);
-    if (blocker.state === "blocked" && !isBlocked) {
-      blocker.reset();
-    }
-  }, [blocker, isBlocked]);
+function ImportantForm() {
+  const [value, setValue] = React.useState("");
+  // let isBlocked = value !== "";
+  const [blocked, setBlocked] = React.useState<boolean>(false);
+  const blocker = useBlocker(blocked);
+
+  const devPrint = () => {
+    setBlocked(false);
+  }
+
+  useBeforeUnload(
+		React.useCallback(() => {
+			
+			console.log('Flying Away!!!')
+			// usePrompt('Message', true)
+		},[])
+	)
 
   return (
     <>
       <p>
         Is the form dirty?{" "}
-        {isBlocked ? (
+        {blocked ? (
           <span style={{ color: "red" }}>Yes</span>
         ) : (
           <span style={{ color: "green" }}>No</span>
@@ -110,10 +115,17 @@ function ImportantForm() {
           <input
             name="data"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (e.target.value !== '') {
+                setBlocked(true);
+              } else {
+                setBlocked(false);
+              }
+            }}
           />
         </label>
-        <button type="submit">Save</button>
+        <button type="submit" onClick={devPrint}>Save</button>
       </Form>
 
       {blocker ? <ConfirmNavigation blocker={blocker} /> : null}
